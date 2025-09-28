@@ -5,27 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DEMO SITE Wireframe</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
-
   <style>
+    /* ---- General Styles ---- */
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:"Montserrat",sans-serif; background:#000; color:#fff; line-height:1.6; }
 
-    /* ---- HEADER ---- */
-    header.navbar {
-      width:100%; padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center;
-      background:rgba(0,0,0,0.6);
-    }
+    /* ---- Header ---- */
+    header.navbar { width:100%; padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.6);}
     .nav-left { display:flex; gap:1rem; align-items:center; font-size:0.9rem; }
     .nav-left a { text-decoration:none; color:#fff; font-weight:700; }
     .city { color:#ccc; }
     .book-btn { background:#fff; color:#000; padding:0.5rem 1rem; text-decoration:none; border-radius:3px; font-weight:bold; white-space:nowrap; }
     .menu-btn { background:none; border:none; font-size:1.5rem; color:#fff; display:none; cursor:pointer; }
-    @media (max-width:768px){
-      .menu-btn{display:block;}
-      .nav-links{display:none;}
-    }
+    @media (max-width:768px){ .menu-btn{display:block;} .nav-links{display:none;} }
 
-    /* ---- HERO ---- */
+    /* ---- Hero ---- */
     .hero { position:relative; height:100vh; background-size:cover; background-position:center; display:flex; flex-direction:column; justify-content:flex-end; padding:20px; transition: background-image 0.6s ease-in-out; }
     .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.55); z-index:0; }
     .hero-inner { position:relative; z-index:1; max-width:800px; }
@@ -38,16 +32,7 @@
     .view-photos { font-size:13px; color:#fff; text-decoration:underline; cursor:pointer; }
 
     /* ---- Chat Floating Panel ---- */
-    :root{
-      --bg:#0b0b0b;
-      --panel:#111;
-      --user:#b8ffb8;
-      --bot:#fff19b;
-      --accent:#fff;
-      --radius:10px;
-      --width:340px;
-      --font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
+    :root{ --bg:#0b0b0b; --panel:#111; --user:#b8ffb8; --bot:#fff19b; --accent:#fff; --radius:10px; --width:340px; --font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
 
     .chat-wrap { position:fixed; bottom:20px; right:20px; z-index:999; font-family:var(--font); }
     .chat-toggle { width:60px; height:60px; border-radius:50%; background:var(--panel); color:#fff; display:flex; justify-content:center; align-items:center; font-size:28px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.6); transition:transform 0.2s; }
@@ -56,7 +41,6 @@
     .chat-panel { display:none; position:absolute; bottom:70px; right:0; width:var(--width); max-width:92vw; }
 
     .card{background:var(--panel); border-radius:var(--radius); width:100%; box-shadow:0 8px 30px rgba(0,0,0,0.6); overflow:hidden; }
-
     .header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:transparent}
     .brand{font-weight:700;font-size:16px}
     .desc{font-size:12px;color:rgba(255,255,255,0.7)}
@@ -176,47 +160,63 @@
       if(chatPanel.style.display==='block') document.getElementById('chatInput').focus();
     });
 
-    // Chat functionality with localhost
+    // Chat functionality with Cloudflare Worker
     const chatLog = document.getElementById('chatLog');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const statusEl = document.getElementById('status');
-    let isPending=false;
+    const WORKER_URL = 'https://openai-api-worker.openapi-worker.workers.dev/'; // <-- your worker URL
+    let isPending = false;
 
-    function appendMessage(text,cls){
-      const div=document.createElement('div');
-      div.className=`bubble ${cls}`;
-      div.textContent=text;
+    function appendMessage(text, cls){
+      const div = document.createElement('div');
+      div.className = `bubble ${cls}`;
+      div.textContent = text;
       chatLog.appendChild(div);
       div.scrollIntoView({behavior:'smooth', block:'end'});
     }
-    function setStatus(text){statusEl.textContent=text;}
-    chatInput.addEventListener('keydown', e=>{if(e.key==='Enter') e.preventDefault();});
+
+    function setStatus(text){ statusEl.textContent = text; }
+
+    chatInput.addEventListener('keydown', e => { if(e.key==='Enter') e.preventDefault(); });
 
     sendBtn.addEventListener('click', async ()=>{
-      const message=chatInput.value.trim();
-      if(!message||isPending) return;
+      const message = chatInput.value.trim();
+      if(!message || isPending) return;
       appendMessage(`你: ${message}`,'user');
       chatInput.value=''; chatInput.focus();
-      const typingEl=document.createElement('div'); typingEl.className='typing'; typingEl.id='typingIndicator';
-      typingEl.textContent='SPA小編客服：回覆中...'; chatLog.appendChild(typingEl); typingEl.scrollIntoView({behavior:'smooth', block:'end'});
+
+      const typingEl = document.createElement('div');
+      typingEl.className='typing';
+      typingEl.id='typingIndicator';
+      typingEl.textContent='SPA小編客服：回覆中...';
+      chatLog.appendChild(typingEl); typingEl.scrollIntoView({behavior:'smooth', block:'end'});
+
       isPending=true; sendBtn.disabled=true; setStatus('連線中...');
+
       try{
-        // <-- LOCALHOST ENDPOINT -->
-        const res=await fetch('http://localhost:3000/chat',{
+        // Send POST to Cloudflare Worker
+        const res = await fetch(WORKER_URL, {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ message })
+          body: JSON.stringify({ prompt: message })
         });
-        if(!res.ok){ const errText=await res.text().catch(()=>res.statusText); throw new Error(`伺服器錯誤 (${res.status}): ${errText}`);}
-        const data=await res.json();
-        const reply=(data && (data.reply || data.output_text || (data.choices && data.choices[0]?.message?.content))) || '抱歉，未取得回覆。';
-        const t=document.getElementById('typingIndicator'); if(t) t.remove();
-        appendMessage(`🌸 小編客服: ${reply}`,'bot'); setStatus('已連線');
+        if(!res.ok){
+          const errText = await res.text().catch(()=>res.statusText);
+          throw new Error(`伺服器錯誤 (${res.status}): ${errText}`);
+        }
+        const data = await res.json();
+        const reply = data?.reply || '抱歉，未取得回覆。';
+        const t = document.getElementById('typingIndicator'); if(t) t.remove();
+        appendMessage(`🌸 小編客服: ${reply}`,'bot');
+        setStatus('已連線');
       }catch(err){
-        const t=document.getElementById('typingIndicator'); if(t) t.remove();
-        appendMessage(`錯誤: ${err.message}`,'bot'); setStatus('錯誤'); console.error('Chat error:', err);
-      }finally{isPending=false; sendBtn.disabled=false;}
+        const t = document.getElementById('typingIndicator'); if(t) t.remove();
+        appendMessage(`錯誤: ${err.message}`,'bot');
+        setStatus('錯誤'); console.error('Chat error:', err);
+      }finally{
+        isPending=false; sendBtn.disabled=false;
+      }
     });
 
     // Quick welcome message
