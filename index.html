@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DEMO SITE Wireframe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:"Montserrat",sans-serif; background:#000; color:#fff; line-height:1.6; }
+
+    /* ---- HEADER ---- */
+    header.navbar {
+      width:100%; padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center;
+      background:rgba(0,0,0,0.6);
+    }
+    .nav-left { display:flex; gap:1rem; align-items:center; font-size:0.9rem; }
+    .nav-left a { text-decoration:none; color:#fff; font-weight:700; }
+    .city { color:#ccc; }
+    .book-btn { background:#fff; color:#000; padding:0.5rem 1rem; text-decoration:none; border-radius:3px; font-weight:bold; white-space:nowrap; }
+    .menu-btn { background:none; border:none; font-size:1.5rem; color:#fff; display:none; cursor:pointer; }
+    @media (max-width:768px){
+      .menu-btn{display:block;}
+      .nav-links{display:none;}
+    }
+
+    /* ---- HERO ---- */
+    .hero { position:relative; height:100vh; background-size:cover; background-position:center; display:flex; flex-direction:column; justify-content:flex-end; padding:20px; transition: background-image 0.6s ease-in-out; }
+    .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.55); z-index:0; }
+    .hero-inner { position:relative; z-index:1; max-width:800px; }
+    .meta { font-size:12px; letter-spacing:1px; text-transform:uppercase; opacity:0.8; }
+    .location-btn { border:none; background:#fff; color:#000; padding:6px 14px; border-radius:20px; font-size:13px; cursor:pointer; margin-right:10px; transition:background 0.2s; font-family:"Montserrat",sans-serif; }
+    .location-btn.active { background:#000; color:#fff; }
+    .location-btn:hover { background:#ddd; }
+    .hero-inner h2 { font-size:2rem; margin:10px 0; font-weight:700; }
+    .hero-description { font-size:15px; margin-bottom:12px; color:rgba(255,255,255,0.9); }
+    .view-photos { font-size:13px; color:#fff; text-decoration:underline; cursor:pointer; }
+
+    /* ---- Chat Floating Panel ---- */
+    :root{
+      --bg:#0b0b0b;
+      --panel:#111;
+      --user:#b8ffb8;
+      --bot:#fff19b;
+      --accent:#fff;
+      --radius:10px;
+      --width:340px;
+      --font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    .chat-wrap { position:fixed; bottom:20px; right:20px; z-index:999; font-family:var(--font); }
+    .chat-toggle { width:60px; height:60px; border-radius:50%; background:var(--panel); color:#fff; display:flex; justify-content:center; align-items:center; font-size:28px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.6); transition:transform 0.2s; }
+    .chat-toggle:hover { transform:scale(1.1); }
+
+    .chat-panel { display:none; position:absolute; bottom:70px; right:0; width:var(--width); max-width:92vw; }
+
+    .card{background:var(--panel); border-radius:var(--radius); width:100%; box-shadow:0 8px 30px rgba(0,0,0,0.6); overflow:hidden; }
+
+    .header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:transparent}
+    .brand{font-weight:700;font-size:16px}
+    .desc{font-size:12px;color:rgba(255,255,255,0.7)}
+    .chat-area{display:flex;flex-direction:column;height:420px;padding:12px;gap:8px}
+    #chatLog{flex:1;overflow:auto;padding-right:6px;display:flex;flex-direction:column;gap:8px}
+    .bubble{max-width:86%;padding:8px 10px;border-radius:10px;word-break:break-word;box-shadow:0 2px 6px rgba(0,0,0,0.4)}
+    .user{align-self:flex-end;background:var(--user);color:#000;border-bottom-right-radius:4px}
+    .bot{align-self:flex-start;background:var(--bot);color:#000;border-bottom-left-radius:4px}
+    .metaLine{font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:6px}
+    .inputRow{display:flex;gap:8px;padding:10px;background:transparent;border-top:1px solid rgba(255,255,255,0.02)}
+    #chatInput{flex:1;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#0d0d0d;color:var(--accent);outline:none}
+    #sendBtn{padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
+    #sendBtn[disabled]{opacity:0.5;cursor:not-allowed}
+    .typing{font-size:12px;color:rgba(255,255,255,0.8);padding-left:6px}
+    .footerNote{font-size:11px;color:rgba(255,255,255,0.5);text-align:center;padding:8px}
+    @media (max-width:420px){:root{--width:92vw}.card{width:92vw}}
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="navbar">
+    <div class="nav-left">
+      <a href="#">GLOBAL</a>
+      <span class="city">TAIWAN</span>
+    </div>
+    <button class="menu-btn" id="menu-toggle">&#9776;</button>
+    <nav class="nav-links" id="nav-menu"></nav>
+    <a href="index.html" class="book-btn">BOOK NOW</a>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero" role="region" aria-label="Hero image">
+    <div class="overlay" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <div class="meta">Choose Location:</div>
+      <div style="margin:8px 0; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="location-btn active" data-location="downtown">Taipei Downtown</button>
+        <button class="location-btn" data-location="xinyi">Taoyuan Zhongli</button>
+      </div>
+      <h2 id="locationTitle">Luxury Spa — Downtown</h2>
+      <div class="hero-description" id="heroDesc">
+        Discover an urban sanctuary at The Spa in Downtown Taipei, where modern serenity meets timeless luxury. Indulge in rejuvenating treatments — traditional Asian therapies, expert massages, and bespoke rituals designed to restore balance and well-being.
+      </div>
+      <a class="view-photos" href="javascript:void(0)" id="openGallery">View more photos</a>
+    </div>
+  </section>
+
+  <!-- Chat Floating Panel -->
+  <div class="chat-wrap">
+    <div class="chat-toggle" id="toggleChat">💬</div>
+    <div class="chat-panel" id="chatPanel">
+      <div class="card" role="region" aria-label="Spa chatbot">
+        <div class="header">
+          <div>
+            <div class="brand">GAY SPA客服🚀</div>
+            <div class="desc">位於中山捷運站與中壢火車站 · 支援繁體中文、日文與英文</div>
+          </div>
+          <div class="metaLine" id="status">離線</div>
+        </div>
+
+        <div class="chat-area">
+          <div id="chatLog" aria-live="polite"></div>
+          <div class="inputRow">
+            <input id="chatInput" type="text" placeholder="請輸入訊息..." aria-label="Message input" autocomplete="off"/>
+            <button id="sendBtn">Send</button>
+          </div>
+          <div class="footerNote">請點「Send」送出 — 按 Enter 不會自動送出</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mobile nav toggle
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('nav-menu').classList.toggle('show');
+    });
+
+    // Hero content switching
+    const locations = {
+      downtown: {
+        title: "Luxury Spa — Taipei",
+        desc: "Discover an urban sanctuary at The Spa in Downtown Taipei, where modern serenity meets timeless luxury. Indulge in rejuvenating treatments — traditional Asian therapies, expert massages, and bespoke rituals designed to restore balance and well-being.",
+        bg: "https://picsum.photos/id/1018/1600/900"
+      },
+      xinyi: {
+        title: "Luxury Spa — Taoyuan Zhongli",
+        desc: "Experience tranquility at The Spa in Taoyuan Zhongli District, a modern oasis surrounded by the city’s vibrant energy. Our expert therapists offer signature massages and innovative treatments tailored to restore balance, beauty, and wellness.",
+        bg: "https://picsum.photos/id/1025/1600/900"
+      }
+    };
+
+    const hero = document.querySelector(".hero");
+    const locBtns = document.querySelectorAll(".location-btn");
+    const locationTitle = document.getElementById("locationTitle");
+    const heroDesc = document.getElementById("heroDesc");
+
+    locBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        locBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const loc = btn.dataset.location;
+        hero.style.backgroundImage = `url('${locations[loc].bg}')`;
+        locationTitle.textContent = locations[loc].title;
+        heroDesc.textContent = locations[loc].desc;
+      });
+    });
+    hero.style.backgroundImage = `url('${locations.downtown.bg}')`;
+
+    // Chat panel toggle
+    const toggleBtn = document.getElementById('toggleChat');
+    const chatPanel = document.getElementById('chatPanel');
+
+    toggleBtn.addEventListener('click', () => {
+      chatPanel.style.display = chatPanel.style.display==='block'?'none':'block';
+      if(chatPanel.style.display==='block') document.getElementById('chatInput').focus();
+    });
+
+    // Chat functionality with localhost
+    const chatLog = document.getElementById('chatLog');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const statusEl = document.getElementById('status');
+    let isPending=false;
+
+    function appendMessage(text,cls){
+      const div=document.createElement('div');
+      div.className=`bubble ${cls}`;
+      div.textContent=text;
+      chatLog.appendChild(div);
+      div.scrollIntoView({behavior:'smooth', block:'end'});
+    }
+    function setStatus(text){statusEl.textContent=text;}
+    chatInput.addEventListener('keydown', e=>{if(e.key==='Enter') e.preventDefault();});
+
+    sendBtn.addEventListener('click', async ()=>{
+      const message=chatInput.value.trim();
+      if(!message||isPending) return;
+      appendMessage(`你: ${message}`,'user');
+      chatInput.value=''; chatInput.focus();
+      const typingEl=document.createElement('div'); typingEl.className='typing'; typingEl.id='typingIndicator';
+      typingEl.textContent='SPA小編客服：回覆中...'; chatLog.appendChild(typingEl); typingEl.scrollIntoView({behavior:'smooth', block:'end'});
+      isPending=true; sendBtn.disabled=true; setStatus('連線中...');
+      try{
+        // <-- LOCALHOST ENDPOINT -->
+        const res=await fetch('http://localhost:3000/chat',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ message })
+        });
+        if(!res.ok){ const errText=await res.text().catch(()=>res.statusText); throw new Error(`伺服器錯誤 (${res.status}): ${errText}`);}
+        const data=await res.json();
+        const reply=(data && (data.reply || data.output_text || (data.choices && data.choices[0]?.message?.content))) || '抱歉，未取得回覆。';
+        const t=document.getElementById('typingIndicator'); if(t) t.remove();
+        appendMessage(`🌸 小編客服: ${reply}`,'bot'); setStatus('已連線');
+      }catch(err){
+        const t=document.getElementById('typingIndicator'); if(t) t.remove();
+        appendMessage(`錯誤: ${err.message}`,'bot'); setStatus('錯誤'); console.error('Chat error:', err);
+      }finally{isPending=false; sendBtn.disabled=false;}
+    });
+
+    // Quick welcome message
+    appendMessage('😳🤖小編客服: 您好！歡迎來到我們的Spa。若需預約或查詢，請輸入問題並按 Send。','bot');
+    setStatus('就緒');
+  </script>
+</body>
+</html>
