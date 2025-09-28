@@ -208,7 +208,7 @@
         const data = await res.json();
         const reply = data?.reply || '抱歉，未取得回覆。';
         const t = document.getElementById('typingIndicator'); if(t) t.remove();
-        appendMessage(`🌸 小編客服: ${reply}`,'bot');
+        appendMessage(`🤖 小編客服: ${reply}`,'bot');
         setStatus('已連線');
       }catch(err){
         const t = document.getElementById('typingIndicator'); if(t) t.remove();
