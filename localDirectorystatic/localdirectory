@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>台北旅遊指南</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+body {
+  background: #000;
+  color: #fff;
+  font-family: "Montserrat", "Noto Sans TC", sans-serif;
+  margin: 0;
+  height: 100%;
+}
+.container {
+  display: flex;
+  height: 100vh;
+  min-height: 100vh;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.sidebar {
+  width: 35%;
+  max-width: 420px;
+  min-width: 0;
+  background: #111;
+  border-right: 1px solid rgba(255,255,255,.08);
+  overflow-y: auto;
+  padding: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+h2 { font-weight:700; margin-bottom:.6rem; }
+.section-tabs { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.8rem; }
+.section-tabs button {
+  background:transparent; color:#fff; border:1px solid rgba(255,255,255,.3);
+  padding:.35rem .8rem; border-radius:20px; cursor:pointer;
+}
+.section-tabs button.active, .section-tabs button:hover {
+  background:#fff; color:#000;
+}
+.filter-tags { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1rem; }
+.tag {
+  padding:.3rem .8rem; border-radius:14px; font-size:.8rem; font-weight:600;
+  color:#fff; border:1px solid transparent; cursor:pointer; transition:.25s;
+}
+.tag:hover { transform:scale(1.05); box-shadow:0 0 8px rgba(255,255,255,.4); }
+.tag.active { border:1px solid #fff; box-shadow:0 0 12px rgba(255,255,255,.6); }
+.location { border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:1rem; padding-bottom:1rem; display:flex; gap:.75rem; cursor:pointer; }
+.location img { width:100px; height:70px; object-fit:cover; border-radius:4px; flex-shrink:0; }
+.location-info h3 { font-size:1.1rem; margin-bottom:.2rem; font-weight:600; }
+.location-info p { font-size:.9rem; color:rgba(255,255,255,.8); margin-bottom:.3rem; }
+.read-more { font-size:.85rem; color:#fff; text-decoration:underline; cursor:pointer; }
+.map { flex:1; background:#111; display:flex; align-items:center; justify-content:center; z-index:0; }
+.map p { color:#aaa; text-align:center; }
+.detail-panel {
+  position:absolute; top:0; right:-100%; width:400px; max-width:100%; height:100%;
+  background:#111; border-left:1px solid rgba(255,255,255,.1); padding:1.5rem;
+  transition:right .4s ease; overflow-y:auto; z-index:2;
+}
+.detail-panel.open { right:0; }
+.close-btn { position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; color:#fff; cursor:pointer; }
+
+/* Responsive */
+@media (max-width:768px){
+  .container { flex-direction: column; height:auto; min-height:100vh; }
+  .sidebar { width:100%; max-width:none; min-width:0; border-bottom:1px solid rgba(255,255,255,.1); }
+  .map { width:100%; height:50vh; }
+  .detail-panel { width:100% !important; right:0 !important; top:0; height:100%; border-left:none; border-top:1px solid rgba(255,255,255,.1); border-radius:0; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <aside class="sidebar">
+    <h2>探索台北</h2>
+    <div class="section-tabs">
+      <button class="tab-btn active" data-section="best">精選推薦</button>
+      <button class="tab-btn" data-section="neighborhoods">各區導覽</button>
+      <button class="tab-btn" data-section="themes">主題體驗</button>
+      <button class="tab-btn" data-section="tips">旅遊小貼士</button>
+    </div>
+    <div class="filter-tags">
+      <span class="tag wanhua" data-filter="wanhua">萬華</span>
+      <span class="tag xinyi" data-filter="xinyi">信義</span>
+      <span class="tag shilin" data-filter="shilin">士林</span>
+      <span class="tag beitou" data-filter="beitou">北投</span>
+    </div>
+
+    <div class="tab-content" id="best">
+      <div class="location" data-district="xinyi" data-title="台北101" data-lat="25.033964" data-lng="121.564468" data-desc="地標摩天大樓，觀景台與購物中心。">
+        <img src="https://via.placeholder.com/100x70" alt="Taipei 101">
+        <div class="location-info"><h3>台北101</h3><p>信義區 <span class="tag xinyi">信義</span></p><a href="javascript:void(0)" class="read-more">更多資訊</a></div>
+      </div>
+      <div class="location" data-district="shilin" data-title="國立故宮博物院" data-lat="25.102398" data-lng="121.548309" data-desc="世界級博物館，收藏中國藝術與歷史文物。">
+        <img src="https://via.placeholder.com/100x70" alt="國立故宮博物院">
+        <div class="location-info"><h3>國立故宮博物院</h3><p>士林區 <span class="tag shilin">士林</span></p><a href="javascript:void(0)" class="read-more">更多資訊</a></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="map">
+    <p>🗺️ 地圖功能即將推出</p>
+  </main>
+
+  <div class="detail-panel" id="detailPanel">
+    <button class="close-btn" id="closePanel">&times;</button>
+    <h3 id="detailTitle"></h3>
+    <p id="detailDesc"></p>
+  </div>
+</div>
+
+<script>
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const section=btn.dataset.section;
+    document.querySelectorAll('.tab-content').forEach(tab=>{
+      tab.style.display=(tab.id===section)?'block':'none';
+    });
+  });
+});
+
+// Filter Tags
+const tags = document.querySelectorAll('.filter-tags .tag');
+const locations = document.querySelectorAll('.location');
+tags.forEach(tag=>{
+  tag.addEventListener('click',()=>{
+    const filter = tag.dataset.filter;
+    const isActive = tag.classList.contains('active');
+    tags.forEach(t=>t.classList.remove('active'));
+    if(!isActive){
+      tag.classList.add('active');
+      locations.forEach(loc=>{
+        loc.style.display=(loc.dataset.district===filter)?'flex':'none';
+      });
+    } else { locations.forEach(loc=>loc.style.display='flex'); }
+  });
+});
+
+// Slide Panel
+const panel = document.getElementById('detailPanel');
+const panelTitle = document.getElementById('detailTitle');
+const panelDesc = document.getElementById('detailDesc');
+document.querySelectorAll('.read-more, .location').forEach(el=>{
+  el.addEventListener('click',(e)=>{
+    const loc = e.target.closest('.location');
+    panelTitle.textContent = loc.dataset.title;
+    panelDesc.textContent = loc.dataset.desc;
+    panel.classList.add('open');
+  });
+});
+document.getElementById('closePanel').addEventListener('click',()=>panel.classList.remove('open'));
+</script>
+
+</body>
+</html>
