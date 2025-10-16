@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 旅遊助理 Widget</title>
+
+<style>
+/* --- existing styles (kept, small additions below) --- */
+body { 
+  margin:0; 
+  font-family: 'Segoe UI', Roboto, sans-serif; 
+  background:#101010; 
+  color:#fff; 
+}
+
+.chat-widget {
+  position: fixed; 
+  right: 20px; 
+  bottom: 20px;
+  z-index: 9999; 
+  display:flex; 
+  flex-direction:column; 
+  align-items:flex-end; 
+  gap:10px;
+}
+
+.chat-btn {
+  background: linear-gradient(135deg, #ffcc70, #ff7eb3);
+  border: none; 
+  border-radius: 50px;
+  padding: 14px 20px; 
+  font-weight:700; 
+  font-size:15px;
+  cursor:pointer;
+  color:#111;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  transition: transform .2s ease;
+}
+.chat-btn:hover { transform: scale(1.05); }
+
+.chat-panel {
+  position: fixed; 
+  right: 20px; 
+  bottom: 80px; 
+  width: 380px; 
+  max-width: 92vw;
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-radius:18px; 
+  overflow:hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border:1px solid rgba(255,255,255,0.15);
+  display:flex; 
+  flex-direction:column;
+  opacity:0; 
+  transform:translateY(20px);
+  pointer-events:none; 
+  visibility:hidden;
+  transition: opacity .3s ease, transform .3s ease, visibility 0s linear .3s;
+}
+.chat-panel.open {
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+  visibility:visible;
+  transition: opacity .3s ease, transform .3s ease;
+}
+
+.chat-header { 
+  padding:14px 16px; 
+  display:flex; 
+  align-items:center; 
+  justify-content:space-between; 
+  background: rgba(0,0,0,0.4); 
+  border-bottom:1px solid rgba(255,255,255,0.1); 
+}
+.brand{ font-weight:800; font-size:16px; letter-spacing:0.5px; }
+.desc{ font-size:12px; color:rgba(255,255,255,0.75); }
+
+.chat-area { 
+  padding:16px; 
+  display:flex; 
+  flex-direction:column; 
+  gap:12px; 
+  min-height:220px; 
+  max-height:50vh; 
+  overflow-y:auto; 
+  overflow-x:hidden; 
+  box-sizing: border-box;
+}
+.bubble { 
+  max-width: 90%; 
+  padding:12px 14px; 
+  border-radius:18px; 
+  line-height:1.4; 
+  font-size:14px; 
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  word-wrap: break-word; 
+  overflow-wrap: break-word; 
+  box-sizing: border-box;
+}
+.bubble.user { 
+  align-self:flex-end; 
+  background: linear-gradient(135deg, #a8ff78, #78ffd6);
+  color:#000; 
+  border-bottom-right-radius:6px; 
+}
+.bubble.bot { 
+  align-self:flex-start; 
+  background: linear-gradient(135deg, #84fab0, #8fd3f4);
+  color:#000; 
+  border-bottom-left-radius:6px; 
+}
+.typing{ font-size:13px; color:rgba(255,255,255,0.75); padding-left:6px; }
+
+/* quick actions */
+.quick-actions{ 
+  display:flex; 
+  gap:8px; 
+  flex-wrap:wrap; 
+  margin-bottom:6px; 
+}
+.quick-btn{ 
+  background: rgba(255,255,255,0.15); 
+  border:none; 
+  border-radius:10px; 
+  padding:8px 12px; 
+  font-size:13px; 
+  cursor:pointer; 
+  color:#fff; 
+  backdrop-filter: blur(6px);
+  transition: background .2s;
+}
+.quick-btn:hover{ background: rgba(255,255,255,0.25); }
+
+.chat-input-row{ 
+  display:flex; 
+  gap:8px; 
+  padding:12px; 
+  border-top:1px solid rgba(255,255,255,0.1); 
+  background: rgba(0,0,0,0.3); 
+}
+#chatInput{ 
+  flex:1; 
+  min-height:42px; 
+  padding:10px 12px; 
+  border-radius:12px; 
+  border:1px solid rgba(255,255,255,0.2); 
+  background: rgba(255,255,255,0.05); 
+  color:#fff; 
+  outline:none; 
+  resize:none; 
+}
+#chatInput::placeholder{ color:rgba(255,255,255,0.5); }
+#sendChatBtn{ 
+  padding:10px 14px; 
+  border-radius:12px; 
+  border:none; 
+  background: linear-gradient(135deg, #ffcc70, #ff7eb3);
+  color:#111; 
+  font-weight:700; 
+  cursor:pointer; 
+  min-width:70px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* --- additions for form bubble and recommendation cards --- */
+.form-bubble { 
+  background: linear-gradient(135deg, #ffffff10, #ffffff05);
+  padding:12px;
+  border-radius:14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.form-bubble form { display:flex; flex-direction:column; gap:8px; }
+.form-bubble label { font-size:12px; color: rgba(255,255,255,0.9); }
+.form-bubble input[type="text"],
+.form-bubble input[type="date"],
+.form-bubble input[type="number"],
+.form-bubble select,
+.form-bubble textarea {
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color:#fff;
+  outline:none;
+  font-size:13px;
+}
+.form-row { display:flex; gap:8px; }
+.form-row .half { flex:1; }
+
+.form-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:4px; }
+.btn-ghost {
+  background: transparent;
+  border:1px solid rgba(255,255,255,0.12);
+  color:#fff;
+  padding:8px 10px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #ffcc70, #ff7eb3);
+  border:none;
+  color:#111;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+.reco-card {
+  background: rgba(0,0,0,0.35);
+  padding:10px;
+  border-radius:12px;
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  width:100%;
+}
+.reco-left { width:64px; height:64px; border-radius:8px; background: linear-gradient(135deg,#ffcc70,#ff7eb3); display:flex; align-items:center; justify-content:center; font-weight:800; color:#111;}
+.reco-body { flex:1; }
+.reco-title { font-weight:700; margin-bottom:4px; }
+.reco-desc { font-size:13px; color: rgba(255,255,255,0.9); margin-bottom:6px; }
+.reco-actions { display:flex; gap:8px; justify-content:flex-end; }
+
+.small-link { background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); padding:6px 8px; border-radius:8px; cursor:pointer; font-size:13px; }
+
+@media (max-width:600px){ 
+  .chat-panel{ 
+    right:0; 
+    bottom:0; 
+    width:100%; 
+    max-width:100%; 
+    border-radius:16px 16px 0 0; 
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="chat-widget">
+  <button class="chat-btn" id="chatToggle" aria-expanded="false" aria-controls="travelChatPanel">💬 旅遊助理</button>
+
+  <div class="chat-panel" id="travelChatPanel" role="dialog" aria-label="Travel Assistant" aria-modal="false">
+    <div class="chat-header">
+      <div>
+        <div class="brand">AI 旅遊助理 ✈️</div>
+        <div class="desc">可詢問景點、叫 Uber、行程建議</div>
+      </div>
+      <div>
+        <button id="closeChatPanel" style="background:none;border:none;color:#fff;cursor:pointer;font-weight:700">✕</button>
+      </div>
+    </div>
+    <div class="chat-area" id="chatArea" aria-live="polite"></div>
+    <div style="padding:0 12px 10px;">
+      <div class="quick-actions" id="quickActions" role="toolbar" aria-label="Quick actions">
+        <button class="quick-btn" data-msg="建議景點">建議景點</button>
+        <button class="quick-btn" data-msg="叫 Uber">叫 Uber</button>
+        <button class="quick-btn" data-msg="規劃行程">規劃行程</button>
+      </div>
+      <div class="chat-input-row">
+        <textarea id="chatInput" placeholder="輸入您的旅遊問題..." aria-label="Message input"></textarea>
+        <button id="sendChatBtn">傳送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ----------------- DOM refs ----------------- */
+const chatToggle = document.getElementById('chatToggle');
+const chatPanel = document.getElementById('travelChatPanel');
+const closeChatPanel = document.getElementById('closeChatPanel');
+const chatArea = document.getElementById('chatArea');
+const chatInput = document.getElementById('chatInput');
+const sendChatBtn = document.getElementById('sendChatBtn');
+const quickActions = document.getElementById('quickActions');
+
+function openChat() {
+  chatPanel.classList.add('open');
+  chatToggle.setAttribute('aria-expanded','true');
+  chatInput.focus();
+}
+function closeChat() {
+  chatPanel.classList.remove('open');
+  chatToggle.setAttribute('aria-expanded','false');
+}
+chatToggle.addEventListener('click', ()=> {
+  if (chatPanel.classList.contains('open')) closeChat(); else openChat();
+});
+closeChatPanel.addEventListener('click', closeChat);
+
+/* ----------------- helper utilities ----------------- */
+function scrollToBottom() {
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+function createBubble(who='bot') {
+  const div = document.createElement('div');
+  div.className = 'bubble ' + (who==='user' ? 'user' : 'bot');
+  return div;
+}
+
+/* append plain text bubble (keeps previous logic) */
+function appendTextBubble(text, who='bot') {
+  const div = createBubble(who);
+  div.textContent = text;
+  chatArea.appendChild(div);
+  scrollToBottom();
+  return div;
+}
+
+/* form bubble for itinerary */
+function appendItineraryFormBubble() {
+  // remove any existing form bubble (only one at time)
+  const existing = chatArea.querySelector('.form-bubble');
+  if (existing) existing.closest('.bubble').remove();
+
+  const bubble = createBubble('bot');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'form-bubble';
+  wrapper.innerHTML = `
+    <form id="itineraryForm" aria-label="規劃行程表單">
+      <label for="dest">目的地 (例如：台北)</label>
+      <input id="dest" name="dest" type="text" placeholder="輸入城市或景點" required />
+
+      <div class="form-row">
+        <div class="half">
+          <label for="startDate">出發日期</label>
+          <input id="startDate" name="startDate" type="date" />
+        </div>
+        <div class="half">
+          <label for="days">天數</label>
+          <input id="days" name="days" type="number" min="1" value="2" required />
+        </div>
+      </div>
+
+      <label for="style">旅遊偏好</label>
+      <select id="style" name="style">
+        <option value="culture">文化 / 古蹟</option>
+        <option value="food">美食</option>
+        <option value="nature">自然 / 健行</option>
+        <option value="shopping">購物 / 夜市</option>
+        <option value="mixed" selected>綜合</option>
+      </select>
+
+      <label for="interests">關注項目 (以逗號分隔, e.g. 博物館, 咖啡)</label>
+      <input id="interests" name="interests" type="text" placeholder="博物館, 咖啡, 夜市" />
+
+      <div class="form-row" style="align-items:center">
+        <div class="half">
+          <label for="budget">預算等級</label>
+          <select id="budget" name="budget">
+            <option value="low">低</option>
+            <option value="mid" selected>中</option>
+            <option value="high">高</option>
+          </select>
+        </div>
+        <div class="half">
+          <label for="people">人數</label>
+          <input id="people" name="people" type="number" min="1" value="2" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-ghost" id="itineraryCancel">取消</button>
+        <button type="submit" class="btn-primary" id="itinerarySubmit">開始規劃</button>
+      </div>
+    </form>
+  `;
+  bubble.appendChild(wrapper);
+  chatArea.appendChild(bubble);
+  scrollToBottom();
+
+  // focus destination input
+  const destInput = wrapper.querySelector('#dest');
+  destInput.focus();
+
+  // handlers
+  wrapper.querySelector('#itineraryCancel').addEventListener('click', () => {
+    bubble.remove();
+  });
+
+  wrapper.querySelector('#itineraryForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = {
+      dest: form.dest.value.trim(),
+      startDate: form.startDate.value || null,
+      days: Number(form.days.value) || 1,
+      style: form.style.value,
+      interests: form.interests.value.split(',').map(s=>s.trim()).filter(Boolean),
+      budget: form.budget.value,
+      people: Number(form.people.value) || 1
+    };
+
+    // basic validation
+    if (!data.dest) {
+      alert('請輸入目的地。');
+      form.dest.focus(); return;
+    }
+    // remove form bubble (we'll replace it with user summary & typing)
+    bubble.remove();
+
+    // echo user's filled form as a user bubble
+    const summaryText = `規劃行程：${data.dest}，${data.days} 天，偏好：${translateStyle(data.style)}，關注：${data.interests.join('、') || '無'}。`;
+    appendTextBubble('您：' + summaryText, 'user');
+
+    // show bot typing placeholder
+    const typing = appendTextBubble('旅遊助理正在為您規劃行程...', 'bot');
+    // simulate call to recommendation engine
+    setTimeout(async () => {
+      typing.remove();
+      const recos = generateRecommendations(data);
+      appendRecommendations(recos, data);
+    }, 900 + Math.random()*800);
+  });
+}
+
+/* small helper to translate internal style keys to zh */
+function translateStyle(key) {
+  const map = { culture:'文化', food:'美食', nature:'自然', shopping:'購物', mixed:'綜合' };
+  return map[key] || key;
+}
+
+/* recommendation generation (simple heuristic - replace with real API later) */
+function generateRecommendations(data) {
+  // create 4 sample recommendations adapted to destination / style / interests
+  const baseInterests = data.interests.length ? data.interests : ['地標','景點','在地美食','博物館'];
+  const styleTag = data.style === 'mixed' ? '' : data.style;
+  const n = Math.max(3, Math.min(6, data.days + 1)); // number of recs
+  const recs = [];
+  for (let i=0;i<n;i++){
+    const interest = baseInterests[i % baseInterests.length];
+    const idx = i+1;
+    const title = `${data.dest} ・${capitalize(interest)} 推薦 ${idx}`;
+    const shortDesc = makeDesc(data, interest, idx);
+    const mapsQuery = encodeURIComponent(`${interest} near ${data.dest}`);
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+    recs.push({
+      id: `r${Date.now()}${i}`,
+      title,
+      desc: shortDesc,
+      mapsUrl,
+      interest
+    });
+  }
+  return recs;
+}
+
+function capitalize(s){
+  if(!s) return s;
+  return s[0].toUpperCase() + s.slice(1);
+}
+
+function makeDesc(data, interest, idx) {
+  const budgetNote = data.budget === 'low' ? '（平價）' : data.budget === 'high' ? '（高級）' : '';
+  const peopleNote = data.people > 1 ? `適合 ${data.people} 人` : '單人亦可';
+  const styleNote = data.style === 'food' ? '在地必吃小吃' : (data.style === 'nature' ? '風景與步道' : (data.style === 'culture' ? '特色文化行程' : '人氣景點'));
+  return `${styleNote} — ${capitalize(interest)} ${idx} ${budgetNote}，${peopleNote}。`;
+}
+
+/* append recommendation list to chat area */
+function appendRecommendations(recs, data) {
+  // Title bubble
+  appendTextBubble(`旅遊助理：根據您的偏好（${data.dest}，${data.days} 天，${translateStyle(data.style)}），我為您挑選了 ${recs.length} 個推薦：`, 'bot');
+
+  // For each recommendation, create a card bubble
+  recs.forEach(r=>{
+    const bubble = createBubble('bot');
+    const card = document.createElement('div');
+    card.className = 'reco-card';
+    card.innerHTML = `
+      <div class="reco-left">${r.interest ? r.interest[0].toUpperCase() : '★'}</div>
+      <div class="reco-body">
+        <div class="reco-title">${r.title}</div>
+        <div class="reco-desc">${r.desc}</div>
+        <div class="reco-actions">
+          <button class="small-link" data-maps="${r.mapsUrl}">在地圖中查看</button>
+          <button class="small-link" data-more="${r.id}">更多資訊</button>
+        </div>
+      </div>
+    `;
+    bubble.appendChild(card);
+    chatArea.appendChild(bubble);
+
+    // click handlers for links inside card
+    card.querySelector('[data-maps]').addEventListener('click', (e) => {
+      const url = e.currentTarget.getAttribute('data-maps');
+      // open new tab and also expand small inline iframe
+      window.open(url, '_blank', 'noopener');
+      // insert inline iframe below this card (toggle)
+      const parentBubble = bubble;
+      let iframeWrap = parentBubble.querySelector('.map-inline');
+      if (iframeWrap) {
+        iframeWrap.remove();
+        scrollToBottom();
+        return;
+      }
+      iframeWrap = document.createElement('div');
+      iframeWrap.className = 'map-inline';
+      iframeWrap.style.marginTop = '8px';
+      iframeWrap.innerHTML = `<iframe width="100%" height="160" style="border:0;border-radius:10px; overflow:hidden" loading="lazy" src="${url}&output=embed"></iframe>`;
+      parentBubble.appendChild(iframeWrap);
+      scrollToBottom();
+    });
+
+    card.querySelector('[data-more]').addEventListener('click', (e) => {
+      appendTextBubble(`旅遊助理：更多 ${r.title} 的資訊 — 營業時間、交通與小技巧：建議上午前往以避開人潮。`, 'bot');
+    });
+  });
+
+  scrollToBottom();
+}
+
+/* intercept quick actions — handle 規劃行程 specially */
+quickActions.addEventListener('click', e => {
+  const btn = e.target.closest('.quick-btn'); if(!btn) return;
+  const action = btn.dataset.msg;
+  if (action === '規劃行程') {
+    appendItineraryFormBubble();
+    return;
+  }
+  // other quick actions go through old flow
+  sendUserMessage(action);
+});
+
+/* send from input area */
+sendChatBtn.addEventListener('click', ()=> {
+  const txt=chatInput.value.trim(); if(!txt) return;
+  sendUserMessage(txt);
+});
+chatInput.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){e.preventDefault(); sendChatBtn.click();} });
+
+/* sendUserMessage kept for other quick actions */
+async function sendUserMessage(text) {
+  appendTextBubble('您：' + text, 'user');
+  chatInput.value='';
+  const typing = appendTextBubble('旅遊助理正在輸入...', 'bot');
+  const reply = await mockTravelBot(text);
+  typing.remove();
+  appendTextBubble('旅遊助理：' + reply, 'bot');
+}
+
+/* mock bot for non-form queries */
+/* --- 📍 Geolocation Integration --- */
+function getUserLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        appendTextBubble(`📍 您目前的位置在：${latitude.toFixed(3)}, ${longitude.toFixed(3)}。`, "bot");
+        addMapBubble(latitude, longitude, "您目前的位置");
+      },
+      err => {
+        appendTextBubble("❌ 無法取得您的位置。請確認瀏覽器已允許定位權限。", "bot");
+      }
+    );
+  } else {
+    appendTextBubble("⚠️ 您的瀏覽器不支援定位功能。", "bot");
+  }
+}
+
+/* Helper to show Google Map bubble */
+function addMapBubble(lat, lng, title="地圖位置") {
+  const bubble = createBubble("bot");
+  const mapDiv = document.createElement("div");
+  mapDiv.style.marginTop = "8px";
+  mapDiv.innerHTML = `
+    <div style="font-weight:600;margin-bottom:4px;">${title}</div>
+    <iframe
+      width="100%"
+      height="200"
+      style="border:0;border-radius:10px;"
+      loading="lazy"
+      allowfullscreen
+      src="https://www.google.com/maps?q=${lat},${lng}&z=14&output=embed">
+    </iframe>
+  `;
+  bubble.appendChild(mapDiv);
+  chatArea.appendChild(bubble);
+  scrollToBottom();
+}
+
+/* --- Mock bot for non-form queries --- */
+async function mockTravelBot(msg){
+  await new Promise(r=>setTimeout(r,500));
+  const t = msg.toLowerCase();
+
+  // 📍 location-related queries
+  if (t.includes("我在哪") || t.includes("find nearby") || t.includes("where am i")) {
+    getUserLocation();
+    return "正在為您定位中...";
+  }
+
+  if (t.includes("建議")) return "您可以參觀台北101 🏙️ 或士林夜市 🌮。";
+  if (t.includes("uber")) return "已幫您叫 Uber 🚕，距離最近的車輛約 3 分鐘到達。";
+  if (t.includes("行程")) return "請使用右方「規劃行程」按鈕來快速建立行程。";
+  return "我可以建議景點、叫 Uber、規劃行程或偵測您的位置。試試輸入『我在哪裡？』看看吧。";
+}
+
+
+/* initial greeting */
+appendTextBubble("旅遊助理：您好！我可以協助您查詢景點、叫 Uber 或規劃行程。試試點選「規劃行程」。", 'bot');
+
+</script>
+
+</body>
+</html>
